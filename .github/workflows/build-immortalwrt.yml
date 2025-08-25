@@ -1,0 +1,80 @@
+# GitHub Action for building ImmortalWrt firmware
+# Target: Stable Release (immortalwrt-24.10)
+
+name: Build ImmortalWrt (Stable Release)
+
+on:
+  # 允许在 Actions 页面手动触发工作流
+  workflow_dispatch:
+    inputs:
+      ssh_action:
+        description: '在编译失败时，通过 tmate 连接到 Runner 进行调试'
+        required: false
+        default: 'false'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    # 1. 检出（Checkout）你的仓库代码，这里包含了你的 .config 文件
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. 初始化编译环境 (使用官方推荐的脚本)
+    - name: Initialize build environment
+      run: |
+        sudo bash -c 'bash <(curl -s https://build-scripts.immortalwrt.org/init_build_environment.sh)'
+
+    # 3. 克隆 ImmortalWrt 源码 (使用官方推荐的更高效的克隆命令)
+    - name: Clone ImmortalWrt source code
+      env:
+        REPO_URL: https://github.com/immortalwrt/immortalwrt.git
+        # ===============================================================
+        # === 修改这里为你需要的稳定版分支 ===
+        REPO_BRANCH: immortalwrt-24.10
+        # ===============================================================
+      run: |
+        git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
+        cd openwrt
+        
+    # 4. 更新 Feeds 并复制你的自定义配置
+    - name: Update feeds and copy custom config
+      working-directory: ./openwrt
+      run: |
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        # 从你的仓库根目录复制 .config 文件到 openwrt 目录
+        cp ../.config .
+        make defconfig
+
+    # 5. （可选）如果编译失败，通过 SSH 连接进行调试
+    - name: SSH connection to runner
+      uses: mxschmitt/action-tmate@v3
+      if: (github.event.inputs.ssh_action == 'true' && success() == false) || failure()
+      with:
+        limit-access-to-actor: true
+
+    # 6. 开始编译固件
+    - name: Build firmware
+      working-directory: ./openwrt
+      run: |
+        echo "Starting build with $(nproc) threads..."
+        make -j$(nproc) V=s
+
+    # 7. 整理文件并将固件上传到 Artifacts
+    - name: Organize files
+      id: organize
+      run: |
+        cd openwrt/bin/targets
+        # 自动查找编译出的固件目录
+        TARGET_DIR=$(ls -d */ | head -n 1)
+        cd "$TARGET_DIR"
+        echo "FIRMWARE_PATH=$(pwd)" >> $GITHUB_ENV
+        echo "RELEASE_TAG=$(date +%Y.%m.%d-%H%M)-stable" >> $GITHUB_ENV
+
+    - name: Upload firmware to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ImmortalWrt-Firmware-${{ env.RELEASE_TAG }}
+        path: ${{ env.FIRMWARE_PATH }}
