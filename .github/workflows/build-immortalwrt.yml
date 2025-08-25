@@ -32,7 +32,7 @@ jobs:
         REPO_URL: https://github.com/immortalwrt/immortalwrt.git
         # ===============================================================
         # === 修改这里为你需要的稳定版分支 ===
-        REPO_BRANCH: immortalwrt-24.10
+        REPO_BRANCH: immortalwrt-24.1
         # ===============================================================
       run: |
         git clone -b $REPO_BRANCH --single-branch --filter=blob:none $REPO_URL openwrt
