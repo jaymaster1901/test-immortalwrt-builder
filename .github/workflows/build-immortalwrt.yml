@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
     # 1. 检出（Checkout）你的仓库代码，这里包含了你的 .config 文件
