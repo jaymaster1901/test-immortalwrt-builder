@@ -30,6 +30,7 @@ jobs:
     - name: Clone ImmortalWrt source code
       env:
         REPO_URL: https://github.com/immortalwrt/immortalwrt
+        TZ: Asia/Shanghai
         # ===============================================================
         # === 修改这里为你需要的稳定版分支 ===
         REPO_BRANCH: openwrt-24.10
