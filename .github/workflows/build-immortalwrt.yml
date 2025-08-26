@@ -29,7 +29,7 @@ jobs:
     # 3. 克隆 ImmortalWrt 源码 (使用官方推荐的更高效的克隆命令)
     - name: Clone ImmortalWrt source code
       env:
-        REPO_URL: https://github.com/immortalwrt/
+        REPO_URL: https://github.com/immortalwrt/immortalwrt
         # ===============================================================
         # === 修改这里为你需要的稳定版分支 ===
         REPO_BRANCH: openwrt-24.10
